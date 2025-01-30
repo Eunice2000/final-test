@@ -108,3 +108,52 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           PULUMI_BACKEND_URL: gs://shortlet-pulumi-state
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+  preview-staging:
+    runs-on: ubuntu-latest
+    needs: test-infra
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+
+      - name: Set up Pulumi
+        uses: pulumi/actions@v4
+        with:
+          pulumi-access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+      - name: Configure Pulumi Backend (Google Cloud Storage)
+        run: |
+          echo "PULUMI_BACKEND_URL=gs://shortlet-pulumi-state" >> $GITHUB_ENV
+          echo "PULUMI_CONFIG_PASSPHRASE=${{ secrets.PULUMI_CONFIG_PASSPHRASE }}" >> $GITHUB_ENV
+
+      - name: Install infra dependencies
+        run: npm install
+        working-directory: infra
+
+      - name: Run Pulumi Preview for staging
+        uses: pulumi/actions@v6
+        with:
+          command: preview
+          stack-name: staging
+          comment-on-pr: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          work-dir: infra
+          upsert: true
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          PULUMI_BACKEND_URL: gs://shortlet-pulumi-state
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
