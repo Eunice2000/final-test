@@ -1,0 +1,199 @@
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy-development:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.PROJECT_ID }}
+
+      - name: Set up Pulumi
+        uses: pulumi/actions@v4
+        with:
+          pulumi-access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+      - name: Configure Pulumi Backend (Google Cloud Storage)
+        run: |
+          echo "PULUMI_BACKEND_URL=gs://shortlet-pulumi-state" >> $GITHUB_ENV
+          echo "PULUMI_CONFIG_PASSPHRASE=${{ secrets.PULUMI_CONFIG_PASSPHRASE }}" >> $GITHUB_ENV
+
+      - name: Install infra dependencies
+        run: npm install
+        working-directory: infra
+
+      - name: Run Pulumi Preview for Development
+        uses: pulumi/actions@v6
+        with:
+          command: up
+          stack-name: development
+          comment-on-pr: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          work-dir: infra
+          upsert: true
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          PULUMI_BACKEND_URL: gs://shortlet-pulumi-state
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan ${{ env.VM_IP }} >> ~/.ssh/known_hosts
+
+      - name: Copy application code to VM
+        run: |
+          scp -r ./app ${{ env.VM_USER }}@${{ env.VM_IP }}:/home/${{ env.VM_USER }}/app
+
+      - name: Restart application on VM
+        run: |
+          ssh ${{ env.VM_USER }}@${{ env.VM_IP }} "cd /home/${{ env.VM_USER }}/app && npm install && pm2 restart app.js"
+
+  # deploy-staging:
+  #   if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging'
+  #   runs-on: ubuntu-latest
+  #   needs: deploy-development
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18
+
+  #     - name: Authenticate to Google Cloud
+  #       uses: google-github-actions/auth@v2
+  #       with:
+  #         credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+  #     - name: Set up gcloud CLI
+  #       uses: google-github-actions/setup-gcloud@v2
+  #       with:
+  #         project_id: ${{ secrets.PROJECT_ID }}
+
+  #     - name: Set up Pulumi
+  #       uses: pulumi/actions@v4
+  #       with:
+  #         pulumi-access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+  #     - name: Configure Pulumi Backend (Google Cloud Storage)
+  #       run: |
+  #         echo "PULUMI_BACKEND_URL=gs://shortlet-pulumi-state" >> $GITHUB_ENV
+  #         echo "PULUMI_CONFIG_PASSPHRASE=${{ secrets.PULUMI_CONFIG_PASSPHRASE }}" >> $GITHUB_ENV
+
+  #     - name: Install infra dependencies
+  #       run: npm install
+  #       working-directory: infra
+
+  #     - name: Deploy staging stack
+  #       run: pulumi up --stack staging --yes
+  #       working-directory: infra
+  #       env:
+  #         PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+  #         PULUMI_BACKEND_URL: gs://shortlet-pulumi-state
+  #         PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+  #     - name: Set up SSH
+  #       run: |
+  #         mkdir -p ~/.ssh
+  #         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+  #         chmod 600 ~/.ssh/id_rsa
+  #         ssh-keyscan ${{ env.VM_IP }} >> ~/.ssh/known_hosts
+
+  #     - name: Copy application code to VM
+  #       run: |
+  #         scp -r ./app ${{ env.VM_USER }}@${{ env.VM_IP }}:/home/${{ env.VM_USER }}/app
+
+  #     - name: Restart application on VM
+  #       run: |
+  #         ssh ${{ env.VM_USER }}@${{ env.VM_IP }} "cd /home/${{ env.VM_USER }}/app && npm install && pm2 restart app.js"
+
+  # deploy-production:
+  #   if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+  #   runs-on: ubuntu-latest
+  #   needs: deploy-staging
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18
+
+  #     - name: Authenticate to Google Cloud
+  #       uses: google-github-actions/auth@v2
+  #       with:
+  #         credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+  #     - name: Set up gcloud CLI
+  #       uses: google-github-actions/setup-gcloud@v2
+  #       with:
+  #         project_id: ${{ secrets.PROJECT_ID }}
+
+  #     - name: Set up Pulumi
+  #       uses: pulumi/actions@v4
+  #       with:
+  #         pulumi-access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+
+  #     - name: Configure Pulumi Backend (Google Cloud Storage)
+  #       run: |
+  #         echo "PULUMI_BACKEND_URL=gs://shortlet-pulumi-state" >> $GITHUB_ENV
+  #         echo "PULUMI_CONFIG_PASSPHRASE=${{ secrets.PULUMI_CONFIG_PASSPHRASE }}" >> $GITHUB_ENV
+
+  #     - name: Install infra dependencies
+  #       run: npm install
+  #       working-directory: infra
+
+  #     - name: Deploy production stack
+  #       run: pulumi up --stack production --yes
+  #       working-directory: infra
+  #       env:
+  #         PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+  #         PULUMI_BACKEND_URL: gs://shortlet-pulumi-state
+  #         PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+
+  #     - name: Set up SSH
+  #       run: |
+  #         mkdir -p ~/.ssh
+  #         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+  #         chmod 600 ~/.ssh/id_rsa
+  #         ssh-keyscan ${{ env.VM_IP }} >> ~/.ssh/known_hosts
+
+  #     - name: Copy application code to VM
+  #       run: |
+  #         scp -r ./app ${{ env.VM_USER }}@${{ env.VM_IP }}:/home/${{ env.VM_USER }}/app
+
+  #     - name: Restart application on VM
+  #       run: |
+  #         ssh ${{ env.VM_USER }}@${{ env.VM_IP }} "cd /home/${{ env.VM_USER }}/app && npm install && pm2 restart app.js"

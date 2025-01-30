@@ -4,7 +4,7 @@ on:
   pull_request:
     branches:
       - main
-permissions: write-all
+permissions: write-all  
 
 jobs:
   test-backend:
@@ -24,7 +24,7 @@ jobs:
 
       # - name: Run backend tests
       #   run: npm test
-      #   working-directory: app
+      #   working-directory: application
 
   test-infra:
     runs-on: ubuntu-latest
