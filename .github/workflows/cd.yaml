@@ -48,12 +48,7 @@ jobs:
       - name: Install infra dependencies
         run: npm install
         working-directory: infra
-        
-      - name: Cancel previous Pulumi operations
-        run: pulumi cancel --stack shortlet-infrastructure2/shortlet-app-project/development || true
-        env:
-          PULUMI_BACKEND_URL: gs://shortlet-pulumi-state
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      
 
 
       - name: Run Pulumi Preview for Development
