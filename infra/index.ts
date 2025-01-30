@@ -2,7 +2,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as gcp from "@pulumi/gcp";
 import { createVPC, createSubnet, createFirewall } from "./components/network";
 import { createVM, createInstanceTemplate } from "./components/compute-vm";
-import { createServiceAccount, assignIAMRole } from "./components/serviceaccount";
+import { createServiceAccount } from "./components/serviceaccount";
 import { environments } from "./components/variables";
 import { enableMonitoring, enableLogging } from "./components/monitoring";
 import { createStorageBucket, uploadStaticAsset } from "./components/storage";
@@ -26,9 +26,9 @@ if (stack === "development") {
 
 // Service Account
 const serviceAccount = createServiceAccount(`${stack}-service-account`);
-assignIAMRole(serviceAccount, "roles/secretmanager.secretAccessor");
+// assignIAMRole(serviceAccount, "roles/secretmanager.secretAccessor");
 
-serviceAccount.email.apply(email => {
+serviceAccount.email.apply(async (email) => {
     if (stack === "development") {
         // Create a VM without explicitly specifying a subnet or zone
         createVM(`${stack}-vm`, env.machineType, undefined, undefined, env.image, vpc, subnet, email);
@@ -56,5 +56,6 @@ if (stack === "development") {
     const bucket = createStorageBucket(`shorlet-static-file`);
     uploadStaticAsset(bucket, "index.html", "<html><body>Hello World</body></html>");
 }
+
 
 export {}; // Explicitly export for Pulumi
