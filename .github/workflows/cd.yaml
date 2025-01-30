@@ -52,7 +52,7 @@ jobs:
       - name: Run Pulumi Preview for Development
         uses: pulumi/actions@v6
         with:
-          command: up
+          command: down
           stack-name: development
           comment-on-pr: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
