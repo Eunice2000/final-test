@@ -28,7 +28,7 @@ if (stack === "development") {
 const serviceAccount = createServiceAccount(`${stack}-service-account`);
 assignIAMRole(serviceAccount, "roles/secretmanager.secretAccessor");
 
-serviceAccount.email.apply(async (email) => {
+serviceAccount.email.apply(email => {
     if (stack === "development") {
         // Create a VM without explicitly specifying a subnet or zone
         createVM(`${stack}-vm`, env.machineType, undefined, undefined, env.image, vpc, subnet, email);
@@ -56,6 +56,5 @@ if (stack === "development") {
     const bucket = createStorageBucket(`shorlet-static-file`);
     uploadStaticAsset(bucket, "index.html", "<html><body>Hello World</body></html>");
 }
-
 
 export {}; // Explicitly export for Pulumi
