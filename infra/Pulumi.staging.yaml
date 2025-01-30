@@ -1,0 +1,4 @@
+encryptionsalt: v1:P7hbd7DpKxM=:v1:Ks5wWf5Q3uoaS/OX:h850zc42MET1ZruQVkbrVR5UDrVU+g==
+config:
+  gcp:project: shortlet-app-project
+  gcp:zone: us-central1-a

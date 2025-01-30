@@ -1,0 +1,4 @@
+encryptionsalt: v1:neclWWE/BBY=:v1:OORFsADRokmg/Amd:m8Pwjm0ExkLXAg6/ip7MswqodZZqXA==
+config:
+  gcp:project: shortlet-app-project
+  gcp:zone: us-central1-a
