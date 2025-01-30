@@ -1,7 +1,7 @@
 name: CD Pipeline
 
 on:
-  push:
+  pull_request:
     branches:
       - main
   workflow_dispatch:
@@ -11,8 +11,8 @@ on:
         required: true
         type: choice
         options:
-          - staging
-          - production
+          - development
+          # - production
 
 jobs:
   deploy-development:
