@@ -65,20 +65,20 @@ jobs:
           PULUMI_BACKEND_URL: gs://shortlet-pulumi-state
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
 
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan ${{ env.VM_IP }} >> ~/.ssh/known_hosts
+      # - name: Set up SSH
+      #   run: |
+      #     mkdir -p ~/.ssh
+      #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+      #     chmod 600 ~/.ssh/id_rsa
+      #     ssh-keyscan ${{ env.VM_IP }} >> ~/.ssh/known_hosts
 
-      - name: Copy application code to VM
-        run: |
-          scp -r ./app ${{ env.VM_USER }}@${{ env.VM_IP }}:/home/${{ env.VM_USER }}/app
+      # - name: Copy application code to VM
+      #   run: |
+      #     scp -r ./app ${{ env.VM_USER }}@${{ env.VM_IP }}:/home/${{ env.VM_USER }}/app
 
-      - name: Restart application on VM
-        run: |
-          ssh ${{ env.VM_USER }}@${{ env.VM_IP }} "cd /home/${{ env.VM_USER }}/app && npm install && pm2 restart app.js"
+      # - name: Restart application on VM
+      #   run: |
+      #     ssh ${{ env.VM_USER }}@${{ env.VM_IP }} "cd /home/${{ env.VM_USER }}/app && npm install && pm2 restart app.js"
 
   # deploy-staging:
   #   if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging'
