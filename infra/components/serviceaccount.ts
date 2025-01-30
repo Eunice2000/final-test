@@ -8,10 +8,3 @@ export function createServiceAccount(name: string) {
     });
 }
 
-export function assignIAMRole(serviceAccount: gcp.serviceaccount.Account, role: string) {
-    return new gcp.projects.IAMMember(`${serviceAccount.name}-${role}`, {
-        project: `shortlet-app-project`, // Provide the project ID
-        member: pulumi.interpolate`serviceAccount:${serviceAccount.email}`, // Use pulumi.interpolate
-        role: role,
-    });
-}
