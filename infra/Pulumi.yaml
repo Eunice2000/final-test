@@ -1,4 +1,4 @@
-name: shortlet-infrastructure2
+name: shortlet-main-infra
 description: using pulumi to provision shortlet infrastructure
 runtime:
   name: nodejs
